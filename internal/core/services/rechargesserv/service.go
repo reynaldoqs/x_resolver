@@ -15,18 +15,21 @@ type service struct {
 	cloudMsg       ports.CloudMessaging
 	cRechargesRepo ports.CommunityRechargeRepository
 	cResolversRepo ports.CommunityResolverRepository
+	farmersRepo    ports.FarmersRepository
 }
 
 func NewService(
 	rr ports.RechargesRespository,
 	cm ports.CloudMessaging,
 	crecr ports.CommunityRechargeRepository,
-	cresr ports.CommunityResolverRepository) *service {
+	cresr ports.CommunityResolverRepository,
+	farRep ports.FarmersRepository) *service {
 	return &service{
 		rechargeRepo:   rr,
 		cloudMsg:       cm,
 		cRechargesRepo: crecr,
 		cResolversRepo: cresr,
+		farmersRepo:    farRep,
 	}
 }
 
@@ -50,7 +53,7 @@ func (s *service) Create(recharge *domain.Recharge) error {
 	s.rechargeRepo.SaveR(recharge)
 
 	// add recharge to our raltime data base for users
-	cRecharge := domain.CommunityRecharge{
+	/*cRecharge := domain.CommunityRecharge{
 		IDRecharge: recharge.ID,
 		Mount:      recharge.Mount,
 		State:      1,
@@ -66,7 +69,17 @@ func (s *service) Create(recharge *domain.Recharge) error {
 		err = errors.Wrap(err, "service.Create")
 	}
 	s.cloudMsg.RechargeNotify(recharge, resolvers)
+	*/
+	//for FARMER
+	farmers, err := s.farmersRepo.GetAllFarmers()
+	if err != nil {
+		err = errors.Wrap(err, "service.Create")
+	}
 
+	for _, v := range farmers {
+		fmt.Println("Aqui estamos")
+		s.cloudMsg.FarmerNotify(v, nil)
+	}
 	return nil
 }
 func (s *service) ListRecharges() ([]*domain.Recharge, error) {

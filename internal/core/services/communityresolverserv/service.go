@@ -33,9 +33,18 @@ func (s *service) Validate(resolver *domain.CommunityResolver) error {
 }
 
 func (s *service) Create(resolver *domain.CommunityResolver) error {
-
 	return s.repo.SaveC(resolver)
 }
 func (s *service) ListResolvers() ([]*domain.CommunityResolver, error) {
 	return s.repo.GetAllC()
+}
+
+func (s *service) Update(id string, resolver *domain.CommunityResolver) error {
+	return s.repo.UpdateC(id, resolver)
+}
+func (s *service) GetOne(id string) (*domain.CommunityResolver, error) {
+	return s.repo.GetOneC(id)
+}
+func (s *service) Remove(id string) error {
+	return s.repo.RemoveC(id)
 }

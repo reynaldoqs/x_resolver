@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -68,11 +67,10 @@ func (r *communityRepo) SaveC(rslr *domain.CommunityResolver) error {
 	defer cancel()
 
 	collection := r.client.Database(r.database).Collection("communityResolvers")
-	fmt.Println(rslr)
 	_, err := collection.InsertOne(
 		ctx,
 		bson.M{
-			"ID":                rslr.ID,
+			"id":                rslr.ID,
 			"msgToken":          rslr.MsgToken,
 			"notify":            rslr.Notify,
 			"resolverRecharges": rslr.CRecharges,
@@ -81,10 +79,77 @@ func (r *communityRepo) SaveC(rslr *domain.CommunityResolver) error {
 	)
 
 	if err != nil {
-		err := errors.Wrap(err, "comminityresolverrepo.SaveC")
+		err := errors.Wrap(err, "communityresolverrepo.SaveC")
+		return err
+	}
+
+	return err
+
+}
+
+// UpdateC updates all fields without recharges
+func (r *communityRepo) UpdateC(id string, resolver *domain.CommunityResolver) error {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	collection := r.client.Database(r.database).Collection("communityResolvers")
+
+	filter := bson.M{"id": id}
+	update := bson.M{
+		"$set": bson.M{
+			"id":                resolver.ID,
+			"msgToken":          resolver.MsgToken,
+			"notify":            resolver.Notify,
+			"resolverRecharges": resolver.CRecharges,
+			"resolvers":         resolver.Resolvers,
+		},
+	}
+	upset := true
+	after := options.After
+
+	opt := options.FindOneAndUpdateOptions{
+		ReturnDocument: &after,
+		Upsert:         &upset,
+	}
+
+	result := collection.FindOneAndUpdate(ctx, filter, update, &opt)
+	if result.Err() != nil {
+		err := errors.Wrap(result.Err(), "communityresolverrepo.GetOneC")
 		return err
 	}
 
 	return nil
+}
+func (r *communityRepo) GetOneC(id string) (*domain.CommunityResolver, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
 
+	collection := r.client.Database(r.database).Collection("communityResolvers")
+
+	result := collection.FindOne(ctx, bson.M{"id": id})
+
+	var resolver domain.CommunityResolver
+
+	err := result.Decode(&resolver)
+	if err != nil {
+		err = errors.Wrap(err, "communityresolverrepo.GetOneC")
+		return nil, err
+	}
+
+	return &resolver, nil
+}
+
+func (r *communityRepo) RemoveC(id string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	collection := r.client.Database(r.database).Collection("communityResolvers")
+
+	_, err := collection.DeleteOne(ctx, bson.M{"id": id})
+	if err != nil {
+		err = errors.Wrap(err, "comminityresolverrepo.RemoveC")
+		return err
+	}
+
+	return err
 }

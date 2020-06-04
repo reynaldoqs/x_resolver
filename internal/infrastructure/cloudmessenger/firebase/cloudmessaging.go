@@ -54,3 +54,33 @@ func (msgn *messageNotifier) RechargeNotify(recharge *domain.Recharge, resolvers
 	}
 	return err
 }
+
+func (msgn *messageNotifier) FarmerNotify(farmer *domain.Farmer, data map[string]string) error {
+	//get from resolvers
+	fmt.Println("Ya empezamos 1")
+
+	notification := messaging.Notification{
+		Title: farmer.DeviceID,
+		Body:  fmt.Sprintf("el numero %v necesita recarga", farmer.PhoneNumber),
+	}
+	fmt.Println("Ya empezamos 2")
+	data = map[string]string{
+		"execCode": "*#62#",
+	}
+	fmt.Println("Ya empezamos 3")
+	message := messaging.Message{
+		Token:        farmer.MsgToken,
+		Data:         data,
+		Notification: &notification,
+	}
+	fmt.Println("Ya empezamos 4")
+	result, err := msgn.client.Send(context.TODO(), &message)
+	if err != nil {
+		fmt.Println(err)
+		err = errors.Wrap(err, "cloudmessaging.RechargeNotify")
+		return err
+	}
+	fmt.Println("Ya mandamos")
+	fmt.Println(result)
+	return err
+}
